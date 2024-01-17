@@ -1,13 +1,12 @@
 package com.backend.javabackend.handler;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketHandler;
@@ -21,20 +20,15 @@ public class SocketHandler implements WebSocketHandler {
 
     private static final List<WebSocketSession> sessions = new ArrayList<>();
 
-    private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-    private static final int PING_INTERVAL_SECONDS = 100; // Change this to your desired interval
-
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         log.info("Websocket closed");
-        close();
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         log.info("Websocket established");
         sessions.add(session);
-        startPingPong(session);
     }
 
     @Override
@@ -42,12 +36,40 @@ public class SocketHandler implements WebSocketHandler {
         String payload = message.getPayload().toString();
         log.info("msg recieve: {}", payload);
 
-        if ("ping".equals(payload)) {
-            sendMessage(session, "pong");
-        }
+        try {
+            var binance = new WebSocketClient(URI.create("wss://stream.binance.com/stream")) {
+                @Override
+                public void onOpen(ServerHandshake handshakedata) {
+                    System.out.println("Connected to Binance WebSocket");
+                    // Send the subscription message after connecting
+                    send("{\"method\":\"SUBSCRIBE\",\"params\":[\"btcusdt@kline_1s\"],\"id\":1}");
+                }
 
-        if ("time".equals(payload)) {
-            sendMessage(session, new Date().toString());
+                @Override
+                public void onMessage(String message) {
+                    System.out.println("Received message from Binance WebSocket: " + message);
+                    try {
+                        sendMessage(session, message);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    // Handle the received message as needed
+                }
+
+                @Override
+                public void onClose(int code, String reason, boolean remote) {
+                    System.out.println("Connection to Binance WebSocket closed. Code: " + code + ", Reason: " + reason);
+                }
+
+                @Override
+                public void onError(Exception ex) {
+                    System.err.println("Error in Binance WebSocket connection: " + ex.getMessage());
+                }
+            };
+
+            binance.connect();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -61,21 +83,6 @@ public class SocketHandler implements WebSocketHandler {
         return false;
     }
 
-    private void startPingPong(WebSocketSession session) {
-        executorService.scheduleAtFixedRate(() -> {
-            try {
-                sendMessage(session, String.format("%s: Ping!", new Date().toInstant().toEpochMilli()));
-                log.info("{}: Ping!", new Date().toInstant().toEpochMilli());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }, 0, PING_INTERVAL_SECONDS, TimeUnit.MILLISECONDS);
-    }
-
-    public void close() {
-        executorService.shutdown();
-    }
-
     private void sendMessage(WebSocketSession session, String message) throws IOException {
         session.sendMessage(new TextMessage(message));
     }
@@ -84,6 +91,18 @@ public class SocketHandler implements WebSocketHandler {
         for (WebSocketSession session : sessions) {
             try {
                 session.sendMessage(new TextMessage(message));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void forwardMessageToAll(String message) {
+        for (WebSocketSession session : sessions) {
+            try {
+                if (session.isOpen()) {
+                    session.sendMessage(new TextMessage(message));
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
