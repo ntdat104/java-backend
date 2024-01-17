@@ -1,13 +1,17 @@
 package com.backend.javabackend.client;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
-
-import com.backend.javabackend.handler.SocketHandler;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
 
 public class BinanceWebSocketClient extends WebSocketClient {
+
+    private WebSocketSession session;
 
     private static final URI uri = URI.create("wss://stream.binance.com/stream");
 
@@ -25,9 +29,13 @@ public class BinanceWebSocketClient extends WebSocketClient {
     @Override
     public void onMessage(String message) {
         System.out.println("BinanceWebSocket Received message: " + message);
-        // Process the received message
-
-        SocketHandler.forwardMessageToAll(message);
+        if (session != null) {
+            try {
+                session.sendMessage(new TextMessage(message));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -52,6 +60,11 @@ public class BinanceWebSocketClient extends WebSocketClient {
                 e.printStackTrace();
             }
         }).start();
+    }
+
+    public void handleMessage(WebSocketSession session, String message) {
+        this.session = session;
+        this.send(message);
     }
 
 }
