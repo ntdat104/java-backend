@@ -1,8 +1,8 @@
-package com.backend.javabackend.form;
+package com.backend.javabackend.websocket.form;
 
 import java.util.List;
 
-import com.backend.javabackend.enums.BinanceMethod;
+import com.backend.javabackend.websocket.enums.SocketMethod;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,7 +14,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BinanceRequest {
-    private BinanceMethod method;
+    private SocketMethod method;
 
     private List<String> params;
 

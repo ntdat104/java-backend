@@ -1,12 +1,11 @@
-package com.backend.javabackend.config;
+package com.backend.javabackend.websocket.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
-import com.backend.javabackend.handler.SocketHandler;
+import com.backend.javabackend.websocket.handler.SocketHandler;
 
 import lombok.AllArgsConstructor;
 
@@ -17,12 +16,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(websocketHandler(), "/ws").setAllowedOrigins("*");
-    }
-
-    @Bean
-    SocketHandler websocketHandler() {
-        return new SocketHandler();
+        registry.addHandler(new SocketHandler(), "/ws").setAllowedOrigins("*");
     }
 
 }

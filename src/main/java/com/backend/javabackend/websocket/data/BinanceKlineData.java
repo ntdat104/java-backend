@@ -1,4 +1,4 @@
-package com.backend.javabackend.data;
+package com.backend.javabackend.websocket.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
