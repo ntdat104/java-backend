@@ -1,6 +1,7 @@
 package com.backend.javabackend.websocket.client;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -15,9 +16,14 @@ import com.backend.javabackend.websocket.enums.SocketMethod;
 import com.backend.javabackend.websocket.form.BinanceRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class BinanceClient extends WebSocketClient {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private HashSet<String> params = new HashSet<>();
 
     private Map<WebSocketSession, HashSet<String>> sessions = new LinkedHashMap<>();
 
@@ -29,6 +35,18 @@ public class BinanceClient extends WebSocketClient {
     @Override
     public void onOpen(ServerHandshake handshakedata) {
         System.out.println("Binance socket is opened");
+
+        if (params.size() > 0) {
+            try {
+                var request = new BinanceRequest();
+                request.setId(1);
+                request.setMethod(SocketMethod.SUBSCRIBE);
+                request.setParams(new ArrayList<>(params));
+                send(objectMapper.writeValueAsString(request));
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
+        }
     }
 
     @Override
@@ -45,7 +63,7 @@ public class BinanceClient extends WebSocketClient {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 
@@ -66,7 +84,7 @@ public class BinanceClient extends WebSocketClient {
                 Thread.sleep(delay);
                 reconnect();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
             }
         }).start();
     }
@@ -87,9 +105,13 @@ public class BinanceClient extends WebSocketClient {
                 this.sessions.put(session, new HashSet<>(request.getParams()));
             }
 
+            if (request.getMethod().equals(SocketMethod.SUBSCRIBE)) {
+                params.addAll(request.getParams());
+            }
+
             this.send(objectMapper.writeValueAsString(request));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 

@@ -31,11 +31,12 @@ public class SocketHandler implements WebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
         log.info("Websocket closed");
+        binanceClient.close();
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
-        log.info("Websocket established");
+        log.info("Websocket established {}", session.getId());
         sessions.add(session);
     }
 
@@ -53,7 +54,7 @@ public class SocketHandler implements WebSocketHandler {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
 
     }
@@ -74,7 +75,7 @@ public class SocketHandler implements WebSocketHandler {
                 try {
                     session.sendMessage(new TextMessage(message));
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    log.error(e.getMessage());
                 }
             }
         }
