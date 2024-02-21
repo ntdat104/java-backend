@@ -34,7 +34,7 @@ public class BinanceClient extends WebSocketClient {
 
     @Override
     public void onOpen(ServerHandshake handshakedata) {
-        System.out.println("Binance socket is opened");
+        log.info("Binance socket is opened");
 
         if (params.size() > 0) {
             try {
@@ -69,7 +69,7 @@ public class BinanceClient extends WebSocketClient {
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        System.out.println("Binance is closed, code: " + code + ", reason: " + reason);
+        log.info("Binance is closed, code: " + code + ", reason: " + reason);
         scheduleReconnect(3000);
     }
 
