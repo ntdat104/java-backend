@@ -31,7 +31,6 @@ public class SocketHandler implements WebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
         log.info("Websocket closed");
-        binanceClient.close();
     }
 
     @Override
